@@ -4,6 +4,10 @@ import type { NextConfig } from "next";
 // we use the request-time rendering model rather than Cache Components.
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pg", "@react-pdf/renderer"],
+  experimental: {
+    // Ranking history and link imports can be a few megabytes of CSV.
+    serverActions: { bodySizeLimit: "8mb" },
+  },
   turbopack: {
     rules: {
       "*.css": {
