@@ -19,6 +19,10 @@ export function appSecret(): Buffer {
   return Buffer.from(hex, "hex");
 }
 
+export function appSecretConfigured(): boolean {
+  return /^[0-9a-fA-F]{64}$/.test(process.env.APP_SECRET ?? "");
+}
+
 export function cronSecret(): string | null {
   const s = process.env.CRON_SECRET;
   return s && s.length >= 16 ? s : null;

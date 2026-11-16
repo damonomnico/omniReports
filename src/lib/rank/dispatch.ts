@@ -10,7 +10,7 @@ import {
   type SerpTaskInput,
 } from "@/lib/dataforseo/client";
 import { isoWeekday, todayInTz } from "@/lib/dates";
-import { appSecret, appUrl, dataForSeoConfigured } from "@/lib/env";
+import { appSecret, appSecretConfigured, appUrl, dataForSeoConfigured } from "@/lib/env";
 
 /**
  * Token DataForSEO echoes back on the webhook URL. Derived from APP_SECRET so
@@ -26,6 +26,8 @@ export function postbackUrl(kind: "organic" | "maps"): string | undefined {
   if (/\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(base) || !base.startsWith("https://")) {
     return undefined;
   }
+  // Without APP_SECRET the webhook cannot be authenticated, so fall back to polling.
+  if (!appSecretConfigured()) return undefined;
   // $id and $tag are substituted by DataForSEO.
   return `${base}/api/webhooks/dataforseo?token=${webhookToken()}&kind=${kind}&id=$id&tag=$tag`;
 }

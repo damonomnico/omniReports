@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { AlertTriangle, CheckCircle2, CircleDashed } from "lucide-react";
 import { db } from "@/db";
+import { clients } from "@/db/schema";
+import { Button } from "@/components/ui/button";
+import { createDemoClientAction, removeDemoClientAction } from "@/lib/actions/demo";
+import { DEMO_DOMAIN } from "@/lib/demo/seed";
 import { PageHeader } from "@/components/shell/page-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { CopyField } from "@/components/ui/copy-field";
 import { requireStaff } from "@/lib/auth/guards";
 import { getAccountStatus } from "@/lib/dataforseo/client";
 import {
+  appSecretConfigured,
   appUrl,
   cronSecret,
   dataForSeoConfigured,
@@ -66,6 +71,7 @@ export default async function SettingsPage() {
     `),
   ]);
   const u = usage.rows[0];
+  const [demo] = await db.select({ id: clients.id }).from(clients).where(eq(clients.domain, DEMO_DOMAIN));
   const webhook = postbackUrl("organic");
   const hasCron = cronSecret() !== null;
 
@@ -101,6 +107,16 @@ export default async function SettingsPage() {
                 </>
               ) : (
                 <>DataForSEO rejected the request: {dfs?.message}</>
+              )}
+            </Row>
+            <Row status={appSecretConfigured() ? "ok" : "warn"} title="Encryption key">
+              {appSecretConfigured() ? (
+                <>Google connections are stored encrypted with APP_SECRET.</>
+              ) : (
+                <>
+                  <code>APP_SECRET</code> is missing or is not 64 hex characters. Google accounts cannot be
+                  connected and the rank results webhook is switched off until it is set.
+                </>
               )}
             </Row>
             <Row status={googleConfigured() ? "ok" : "off"} title="Google sign-in (Search Console, Analytics, Business Profile)">
@@ -160,6 +176,27 @@ export default async function SettingsPage() {
               </div>
             ))}
           </dl>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Demo client"
+            description="A fictional Cardiff plumber with generated sample data, for showing prospects or trying things out. It never calls paid services and is clearly labelled as a demo."
+          />
+          <div className="flex flex-wrap gap-2 px-5 pb-5">
+            <form action={createDemoClientAction}>
+              <Button type="submit" variant="secondary">
+                {demo ? "Rebuild demo client with fresh dates" : "Create demo client"}
+              </Button>
+            </form>
+            {demo ? (
+              <form action={removeDemoClientAction}>
+                <Button type="submit" variant="danger">
+                  Remove demo client
+                </Button>
+              </form>
+            ) : null}
+          </div>
         </Card>
 
         <Card>

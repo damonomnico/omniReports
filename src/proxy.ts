@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/reset/", "/invite/", "/api/"];
+const PUBLIC_PREFIXES = ["/login", "/setup", "/forgot-password", "/reset/", "/invite/", "/api/"];
 
 /**
  * Optimistic check only: bounces visitors with no session cookie to the

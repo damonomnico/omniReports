@@ -171,6 +171,14 @@ export async function updateStaffAction(
 ): Promise<{ error?: string }> {
   const me = await requireAdmin();
   if (userId === me.id) return { error: "You cannot change your own role or deactivate yourself." };
+  // Arguments arrive from the browser, so check them rather than trusting the types.
+  const parsedChange = z
+    .object({ role: z.enum(["admin", "staff"]).optional(), isActive: z.boolean().optional() })
+    .safeParse(change);
+  if (!parsedChange.success || !z.string().uuid().safeParse(userId).success) {
+    return { error: "That change is not valid." };
+  }
+  change = parsedChange.data;
 
   const [target] = await db.select().from(users).where(eq(users.id, userId));
   if (!target || target.role === "client") return { error: "That team member was not found." };
@@ -182,6 +190,8 @@ export async function updateStaffAction(
       ...(change.isActive === undefined ? {} : { isActive: change.isActive }),
     })
     .where(eq(users.id, userId));
+  // Deactivating someone signs them out everywhere straight away.
+  if (change.isActive === false) await destroyAllSessionsForUser(userId);
   revalidatePath("/admin/team");
   return {};
 }
