@@ -1,6 +1,6 @@
 import { gunzipSync } from "node:zlib";
 import { safeEqual } from "@/lib/crypto";
-import type { DfsEnvelope, SerpResult } from "@/lib/dataforseo/client";
+import { getSerpTask, type DfsTask, type SerpResult } from "@/lib/dataforseo/client";
 import { webhookToken } from "@/lib/rank/dispatch";
 import { ingestSerpTask } from "@/lib/rank/ingest";
 
@@ -9,10 +9,21 @@ export const maxDuration = 60;
 
 const MAX_BODY_BYTES = 25 * 1024 * 1024;
 
+/** Accepts the full API envelope, a bare task, or a list of tasks. */
+function tasksIn(body: unknown): DfsTask<SerpResult>[] {
+  if (!body || typeof body !== "object") return [];
+  if (Array.isArray(body)) return body.flatMap(tasksIn);
+  const obj = body as { tasks?: unknown; id?: unknown; result?: unknown };
+  if (Array.isArray(obj.tasks)) return obj.tasks as DfsTask<SerpResult>[];
+  if (typeof obj.id === "string" && "result" in obj) return [obj as unknown as DfsTask<SerpResult>];
+  return [];
+}
+
 /**
- * DataForSEO posts each finished rank check here (gzip-compressed JSON in the
- * same shape as task_get). If this endpoint fails or is slow, DataForSEO puts
- * the task on its "ready" list and the collector cron picks it up instead.
+ * DataForSEO posts each finished rank check here (gzip-compressed JSON). The
+ * URL also carries the task id, so if the body cannot be used the result is
+ * fetched from the API instead. Any failure returns an error status, which
+ * makes DataForSEO list the task as "ready" for the collector job to pick up.
  */
 export async function POST(request: Request) {
   const url = new URL(request.url);
@@ -27,7 +38,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let envelope: DfsEnvelope<SerpResult>;
+  let tasks: DfsTask<SerpResult>[] = [];
   try {
     let raw: Buffer = Buffer.from(await request.arrayBuffer());
     if (raw.length > MAX_BODY_BYTES) {
@@ -38,17 +49,31 @@ export async function POST(request: Request) {
     if (raw.length > 2 && raw[0] === 0x1f && raw[1] === 0x8b) {
       raw = gunzipSync(raw, { maxOutputLength: 200 * 1024 * 1024 });
     }
-    envelope = JSON.parse(raw.toString("utf8")) as DfsEnvelope<SerpResult>;
+    tasks = tasksIn(JSON.parse(raw.toString("utf8")));
   } catch {
-    return Response.json({ error: "Unreadable body" }, { status: 400 });
+    // Fall through: the task id in the URL lets us fetch the result ourselves.
   }
 
   let stored = 0;
-  let unknown = 0;
-  for (const task of envelope.tasks ?? []) {
-    const outcome = await ingestSerpTask(task);
-    if (outcome === "stored") stored++;
-    if (outcome === "unknown_task") unknown++;
+  for (const task of tasks) {
+    if ((await ingestSerpTask(task)) === "stored") stored++;
   }
-  return Response.json({ ok: true, stored, unknown });
+
+  if (stored === 0) {
+    const id = url.searchParams.get("id");
+    const kind = url.searchParams.get("kind") === "maps" ? "maps" : "organic";
+    if (id && /^[0-9a-f-]{20,60}$/i.test(id)) {
+      try {
+        const task = await getSerpTask(kind, id);
+        if (task && (await ingestSerpTask(task)) === "stored") stored++;
+      } catch (err) {
+        console.error("[dataforseo webhook] could not fetch task", id, err);
+      }
+    }
+  }
+
+  if (stored === 0) {
+    return Response.json({ ok: false, error: "No matching task could be stored" }, { status: 422 });
+  }
+  return Response.json({ ok: true, stored });
 }

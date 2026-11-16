@@ -49,7 +49,8 @@ export async function refreshSearchVolumes(
 
   for (const group of groups.values()) {
     for (let i = 0; i < group.length; i += 1000) {
-      if (summary.requests >= (opts.maxRequests ?? 20)) return summary;
+      // DataForSEO allows 12 of these a minute, so stay under that in one run.
+      if (summary.requests >= (opts.maxRequests ?? 10)) return summary;
       const chunk = group.slice(i, i + 1000);
       const unique = [...new Set(chunk.map((c) => c.keyword.toLowerCase()))];
       try {
