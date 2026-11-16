@@ -36,7 +36,6 @@ export function LocationPicker({ clientId, initial }: { clientId: string; initia
   useEffect(() => {
     if (!open) return;
     const id = ++requestId.current;
-    setLoading(true);
     const timer = setTimeout(async () => {
       try {
         const res = await searchLocationsAction(clientId, query);
@@ -65,7 +64,10 @@ export function LocationPicker({ clientId, initial }: { clientId: string; initia
         <span className="min-w-0 flex-1 truncate font-medium text-ink">{selected.name}</span>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => {
+            if (!open) setLoading(true);
+            setOpen((v) => !v);
+          }}
           className="text-[13px] font-medium text-brand-600 hover:underline"
         >
           {open ? "Done" : "Change"}
@@ -77,7 +79,10 @@ export function LocationPicker({ clientId, initial }: { clientId: string; initia
             <input
               autoFocus
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setLoading(true);
+                setQuery(e.target.value);
+              }}
               placeholder="Search towns, cities, counties..."
               aria-label="Search locations"
               className="h-9 w-full rounded-md border border-line-strong px-2.5 text-sm focus:border-brand-500 focus:outline-none"
@@ -296,11 +301,13 @@ export function CheckNowDialog({
 /** Shows while checks are running and pulls results in as they finish. */
 export function PendingChecks({ clientId, initialPending }: { clientId: string; initialPending: number }) {
   const router = useRouter();
-  const [pending, setPending] = useState(initialPending);
+  // Local count, replaced whenever the server sends a fresh one.
+  const [count, setCount] = useState({ pending: initialPending, from: initialPending });
+  if (count.from !== initialPending) setCount({ pending: initialPending, from: initialPending });
+  const pending = count.pending;
+  const setPending = (value: number) => setCount((c) => ({ ...c, pending: value }));
   const [error, setError] = useState<string | null>(null);
   const [busy, startTransition] = useTransition();
-
-  useEffect(() => setPending(initialPending), [initialPending]);
 
   useEffect(() => {
     if (pending <= 0) return;

@@ -14,7 +14,6 @@ import { Card, CardHeader } from "@/components/ui/card";
 import {
   countDelta,
   percentDelta,
-  positionDelta,
   StatTile,
 } from "@/components/ui/stat-tile";
 import { requireClientAccess, type ClientContext } from "@/lib/auth/guards";

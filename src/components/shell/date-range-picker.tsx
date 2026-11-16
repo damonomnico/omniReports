@@ -30,14 +30,15 @@ export function DateRangePicker({
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [customFrom, setCustomFrom] = useState(from);
-  const [customTo, setCustomTo] = useState(to);
+  // Custom inputs start from the applied range and reset whenever it changes.
+  const applied = `${from}|${to}`;
+  const [custom, setCustom] = useState({ from, to, applied });
+  if (custom.applied !== applied) setCustom({ from, to, applied });
+  const customFrom = custom.from;
+  const customTo = custom.to;
+  const setCustomFrom = (value: string) => setCustom((c) => ({ ...c, from: value }));
+  const setCustomTo = (value: string) => setCustom((c) => ({ ...c, to: value }));
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setCustomFrom(from);
-    setCustomTo(to);
-  }, [from, to]);
 
   useEffect(() => {
     if (!open) return;

@@ -48,8 +48,6 @@ function PickerBody({
   useEffect(() => {
     if (!connectionId) return;
     let cancelled = false;
-    setOptions(null);
-    setError(null);
     loadPropertiesAction(clientId, connectionId, type).then((res) => {
       if (cancelled) return;
       setOptions(res.options);
@@ -85,7 +83,12 @@ function PickerBody({
   return (
     <div className="space-y-4">
       <Field label="Google account" htmlFor={`conn-${type}`}>
-        <Select id={`conn-${type}`} value={connectionId} onChange={(e) => { setSelected(null); setConnectionId(e.target.value); }}>
+        <Select id={`conn-${type}`} value={connectionId} onChange={(e) => {
+            setSelected(null);
+            setOptions(null);
+            setError(null);
+            setConnectionId(e.target.value);
+          }}>
           {connections.map((c) => (
             <option key={c.id} value={c.id}>
               {c.label}

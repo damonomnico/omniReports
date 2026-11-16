@@ -29,6 +29,49 @@ const VIEWS: { key: View; label: string }[] = [
   { key: "unranked", label: "Not ranking" },
 ];
 
+type Sort = { key: SortKey; dir: 1 | -1 };
+
+function SortHeader({
+  k,
+  sort,
+  onSort,
+  children,
+  align = "left",
+}: {
+  k: SortKey;
+  sort: Sort;
+  onSort: (key: SortKey) => void;
+  children: React.ReactNode;
+  align?: "left" | "right";
+}) {
+  const active = sort.key === k;
+  return (
+    <th
+      className={cn("px-3 py-2.5 font-medium", align === "right" && "text-right")}
+      aria-sort={active ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(k)}
+        className={cn(
+          "inline-flex items-center gap-1 hover:text-ink",
+          active && "text-ink",
+          align === "right" && "flex-row-reverse",
+        )}
+      >
+        {children}
+        {active ? (
+          sort.dir === 1 ? (
+            <ArrowUp className="h-3 w-3" aria-hidden="true" />
+          ) : (
+            <ArrowDown className="h-3 w-3" aria-hidden="true" />
+          )
+        ) : null}
+      </button>
+    </th>
+  );
+}
+
 function changeValue(r: KeywordRow, depth: number): number {
   if (r.checkedOn === null || !r.hasStart) return 0;
   return (r.startPosition ?? depth + 1) - (r.position ?? depth + 1);
@@ -48,7 +91,7 @@ export function KeywordTable({
   /** Current URL query string, so keyword links keep the date range. */
   query: string;
 }) {
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "position", dir: 1 });
+  const [sort, setSort] = useState<Sort>({ key: "position", dir: 1 });
   const [search, setSearch] = useState("");
   const [view, setView] = useState<View>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -104,35 +147,6 @@ export function KeywordTable({
 
   function toggleSort(key: SortKey) {
     setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
-  }
-
-  function SortHeader({ k, children, align = "left" }: { k: SortKey; children: React.ReactNode; align?: "left" | "right" }) {
-    const active = sort.key === k;
-    return (
-      <th
-        className={cn("px-3 py-2.5 font-medium", align === "right" && "text-right")}
-        aria-sort={active ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
-      >
-        <button
-          type="button"
-          onClick={() => toggleSort(k)}
-          className={cn(
-            "inline-flex items-center gap-1 hover:text-ink",
-            active && "text-ink",
-            align === "right" && "flex-row-reverse",
-          )}
-        >
-          {children}
-          {active ? (
-            sort.dir === 1 ? (
-              <ArrowUp className="h-3 w-3" aria-hidden="true" />
-            ) : (
-              <ArrowDown className="h-3 w-3" aria-hidden="true" />
-            )
-          ) : null}
-        </button>
-      </th>
-    );
   }
 
   function removeSelected() {
@@ -224,25 +238,25 @@ export function KeywordTable({
                   />
                 </th>
               ) : null}
-              <SortHeader k="keyword">
+              <SortHeader k="keyword" sort={sort} onSort={toggleSort}>
                 <span className={canEdit ? "" : "pl-2"}>Keyword</span>
               </SortHeader>
-              <SortHeader k="position" align="right">
+              <SortHeader k="position" sort={sort} onSort={toggleSort} align="right">
                 Position
               </SortHeader>
-              <SortHeader k="change" align="right">
+              <SortHeader k="change" sort={sort} onSort={toggleSort} align="right">
                 Change
               </SortHeader>
-              <SortHeader k="best" align="right">
+              <SortHeader k="best" sort={sort} onSort={toggleSort} align="right">
                 Best
               </SortHeader>
               {showLocalPack ? (
-                <SortHeader k="localPack" align="right">
+                <SortHeader k="localPack" sort={sort} onSort={toggleSort} align="right">
                   Local pack
                 </SortHeader>
               ) : null}
               {showMaps ? <th className="px-3 py-2.5 text-right font-medium">Maps</th> : null}
-              <SortHeader k="volume" align="right">
+              <SortHeader k="volume" sort={sort} onSort={toggleSort} align="right">
                 Searches / mo
               </SortHeader>
               <th className="px-3 py-2.5 font-medium">Ranking page</th>

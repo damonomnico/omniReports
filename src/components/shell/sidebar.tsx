@@ -186,7 +186,10 @@ function ClientSwitcher({
 export function Sidebar({ user, clients }: { user: ShellUser; clients: ShellClient[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  // The drawer remembers which page it was opened on, so navigating closes it.
+  const [openedOn, setOpenedOn] = useState<string | null>(null);
+  const mobileOpen = openedOn === pathname;
+  const setMobileOpen = (open: boolean) => setOpenedOn(open ? pathname : null);
   const isStaff = user.role !== "client";
 
   // Keep the chosen date range when moving between a client's sections.
@@ -204,8 +207,6 @@ export function Sidebar({ user, clients }: { user: ShellUser; clients: ShellClie
   const current = clients.find((c) => c.id === clientId) ?? null;
   // Keep the section when switching client, except for staff-only settings pages.
   const carrySection = CLIENT_SECTIONS.some((s) => s.slug === section) ? section : "";
-
-  useEffect(() => setMobileOpen(false), [pathname]);
 
   const showSwitcher = isStaff || clients.length > 1;
 
