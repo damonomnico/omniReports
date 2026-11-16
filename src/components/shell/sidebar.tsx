@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
@@ -79,10 +79,12 @@ function ClientSwitcher({
   clients,
   current,
   section,
+  suffix,
 }: {
   clients: ShellClient[];
   current: ShellClient | null;
   section: string;
+  suffix: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -154,7 +156,7 @@ function ClientSwitcher({
               filtered.map((c) => (
                 <li key={c.id} role="option" aria-selected={c.id === current?.id}>
                   <Link
-                    href={`/c/${c.id}${section ? `/${section}` : ""}`}
+                    href={`/c/${c.id}${section ? `/${section}` : ""}${suffix}`}
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-brand-50"
                   >
@@ -183,8 +185,17 @@ function ClientSwitcher({
 
 export function Sidebar({ user, clients }: { user: ShellUser; clients: ShellClient[] }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isStaff = user.role !== "client";
+
+  // Keep the chosen date range when moving between a client's sections.
+  const carried = new URLSearchParams();
+  for (const key of ["range", "from", "to", "compare"]) {
+    const value = searchParams.get(key);
+    if (value) carried.set(key, value);
+  }
+  const rangeSuffix = carried.size > 0 ? `?${carried.toString()}` : "";
 
   // /c/<clientId>/<section>/...
   const match = pathname.match(/^\/c\/([^/]+)(?:\/([^/]+))?/);
@@ -216,7 +227,12 @@ export function Sidebar({ user, clients }: { user: ShellUser; clients: ShellClie
 
       <div className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
         {showSwitcher ? (
-          <ClientSwitcher clients={clients} current={current} section={carrySection} />
+          <ClientSwitcher
+            clients={clients}
+            current={current}
+            section={carrySection}
+            suffix={rangeSuffix}
+          />
         ) : null}
 
         {current ? (
@@ -227,7 +243,7 @@ export function Sidebar({ user, clients }: { user: ShellUser; clients: ShellClie
             {CLIENT_SECTIONS.map((s) => (
               <NavItem
                 key={s.slug}
-                href={`/c/${current.id}${s.slug ? `/${s.slug}` : ""}`}
+                href={`/c/${current.id}${s.slug ? `/${s.slug}` : ""}${rangeSuffix}`}
                 active={section === s.slug}
                 icon={s.icon}
               >
