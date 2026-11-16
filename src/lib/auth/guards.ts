@@ -50,3 +50,17 @@ export async function requireClientStaff(clientId: string): Promise<ClientContex
   if (!ctx.isStaff) notFound();
   return ctx;
 }
+
+/**
+ * Context for trusted background work with no signed-in person, such as the
+ * scheduled report job. It is deliberately a client-level view, so anything
+ * produced with it (a PDF emailed to the client) can never include fields
+ * reserved for the omniSEO team. Never build one from request input.
+ */
+export function systemClientContext(client: Client): ClientContext {
+  return {
+    user: { id: "00000000-0000-0000-0000-000000000000", email: "", name: "omniReports", role: "client" },
+    client,
+    isStaff: false,
+  };
+}

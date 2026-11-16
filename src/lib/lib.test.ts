@@ -105,3 +105,30 @@ describe("csv", () => {
     ]);
   });
 });
+
+describe("report schedule", async () => {
+  const { nextRunAfter, periodFor, comparisonFor } = await import("./reports/schedule");
+
+  it("covers the previous calendar month for monthly reports", () => {
+    const period = periodFor("monthly", "2026-11-03");
+    expect(period).toEqual({ from: "2026-10-01", to: "2026-10-31", days: 31 });
+    expect(comparisonFor("monthly", period)).toEqual({ from: "2026-09-01", to: "2026-09-30", days: 30 });
+    // Works across a year boundary.
+    expect(periodFor("monthly", "2027-01-05")).toEqual({ from: "2026-12-01", to: "2026-12-31", days: 31 });
+  });
+
+  it("covers the seven days before the send date for weekly reports", () => {
+    const period = periodFor("weekly", "2026-11-16");
+    expect(period).toEqual({ from: "2026-11-09", to: "2026-11-15", days: 7 });
+    expect(comparisonFor("weekly", period)).toEqual({ from: "2026-11-02", to: "2026-11-08", days: 7 });
+  });
+
+  it("finds the next send date strictly after a given day", () => {
+    // 2026-11-16 is a Monday.
+    expect(nextRunAfter("weekly", 1, 1, "2026-11-16")).toBe("2026-11-23");
+    expect(nextRunAfter("weekly", 5, 1, "2026-11-16")).toBe("2026-11-20");
+    expect(nextRunAfter("monthly", 1, 3, "2026-11-02")).toBe("2026-11-03");
+    expect(nextRunAfter("monthly", 1, 3, "2026-11-03")).toBe("2026-12-03");
+    expect(nextRunAfter("monthly", 1, 28, "2026-12-28")).toBe("2027-01-28");
+  });
+});
