@@ -55,3 +55,26 @@ export const COMMON_TIMEZONES = [
   "Africa/Johannesburg",
   "Asia/Dubai",
 ];
+
+const ALPHA3_TO_2: Record<string, string> = {
+  GBR: "GB", IRL: "IE", USA: "US", CAN: "CA", AUS: "AU", NZL: "NZ", ZAF: "ZA", ARE: "AE",
+  DEU: "DE", FRA: "FR", ESP: "ES", ITA: "IT", NLD: "NL", BEL: "BE", PRT: "PT", POL: "PL",
+  SWE: "SE", NOR: "NO", DNK: "DK", FIN: "FI", CHE: "CH", AUT: "AT", IND: "IN", PAK: "PK",
+  BGD: "BD", PHL: "PH", SGP: "SG", MYS: "MY", HKG: "HK", JPN: "JP", CHN: "CN", KOR: "KR",
+  BRA: "BR", MEX: "MX", ARG: "AR", NGA: "NG", KEN: "KE", EGY: "EG", TUR: "TR", ROU: "RO",
+  GRC: "GR", CZE: "CZ", HUN: "HU", UKR: "UA", RUS: "RU", SAU: "SA", ISR: "IL", IDN: "ID",
+  THA: "TH", VNM: "VN",
+};
+
+const REGION_NAMES = new Intl.DisplayNames(["en-GB"], { type: "region" });
+
+/** Search Console reports countries as three-letter codes. */
+export function countryNameFromAlpha3(code: string): string {
+  const alpha2 = ALPHA3_TO_2[code.toUpperCase()];
+  if (!alpha2) return code.toUpperCase();
+  try {
+    return REGION_NAMES.of(alpha2) ?? code.toUpperCase();
+  } catch {
+    return code.toUpperCase();
+  }
+}

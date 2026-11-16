@@ -98,3 +98,21 @@ export function StatTile({
     </div>
   );
 }
+
+/**
+ * Change in a ranking position, where a smaller number is better. Moving
+ * from 12.0 to 9.5 shows as an upward, good "2.5".
+ */
+export function positionDelta(
+  current: number | null | undefined,
+  previous: number | null | undefined,
+): DeltaProps | null {
+  if (current == null || previous == null) return null;
+  const gained = previous - current;
+  if (Math.abs(gained) < 0.05) return { text: "0", direction: "flat", good: null };
+  return {
+    text: Math.abs(gained).toLocaleString("en-GB", { maximumFractionDigits: 1 }),
+    direction: gained > 0 ? "up" : "down",
+    good: gained > 0,
+  };
+}

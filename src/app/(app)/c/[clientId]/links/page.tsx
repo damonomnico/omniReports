@@ -154,13 +154,12 @@ export default async function LinksPage({
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-sm">
+                <table className="w-full min-w-[820px] text-sm">
                   <thead>
                     <tr className="border-y border-line text-left text-xs text-muted">
                       <th className="px-5 py-2.5 font-medium">Date</th>
                       <th className="px-3 py-2.5 font-medium">Linking website</th>
-                      <th className="px-3 py-2.5 font-medium">Links to</th>
-                      <th className="px-3 py-2.5 font-medium">Anchor text</th>
+                      <th className="px-3 py-2.5 font-medium">Anchor text and target page</th>
                       <th className="px-3 py-2.5 font-medium">Type</th>
                       <th className="px-3 py-2.5 text-right font-medium">DR</th>
                       <th className="px-3 py-2.5 font-medium">Status</th>
@@ -174,7 +173,7 @@ export default async function LinksPage({
                       return (
                         <tr key={l.id} className="align-top hover:bg-brand-50/50">
                           <td className="px-5 py-3 whitespace-nowrap text-muted">{formatDay(l.builtOn)}</td>
-                          <td className="max-w-64 px-3 py-3">
+                          <td className="max-w-56 px-3 py-3">
                             <a
                               href={l.sourceUrl}
                               target="_blank"
@@ -196,7 +195,10 @@ export default async function LinksPage({
                               </span>
                             ) : null}
                           </td>
-                          <td className="max-w-48 px-3 py-3">
+                          <td className="max-w-60 px-3 py-3">
+                            <span className="block text-ink">
+                              {l.anchorText || <span className="text-subtle">No anchor text</span>}
+                            </span>
                             <a
                               href={l.targetUrl}
                               target="_blank"
@@ -206,9 +208,6 @@ export default async function LinksPage({
                             >
                               {pathOfUrl(l.targetUrl)}
                             </a>
-                          </td>
-                          <td className="max-w-52 px-3 py-3 text-ink">
-                            {l.anchorText || <span className="text-subtle">-</span>}
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap">
                             {linkTypeLabel(l.linkType)}

@@ -45,7 +45,9 @@ export function LocationPicker({ clientId, initial }: { clientId: string; initia
         setNotice(
           res.synced
             ? null
-            : "Town and city targeting becomes available once DataForSEO is connected. Using the whole country for now.",
+            : res.error
+              ? `Towns and cities could not be loaded from DataForSEO (${res.error}). Using the whole country for now.`
+              : "Town and city targeting becomes available once DataForSEO is connected. Using the whole country for now.",
         );
       } finally {
         if (id === requestId.current) setLoading(false);

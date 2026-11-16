@@ -14,7 +14,7 @@ import { RankNav } from "@/components/rank/rank-nav";
 import { DateRangePicker } from "@/components/shell/date-range-picker";
 import { PageHeader } from "@/components/shell/page-header";
 import { Card, CardHeader, EmptyState } from "@/components/ui/card";
-import { countDelta, StatTile, type DeltaProps } from "@/components/ui/stat-tile";
+import { countDelta, positionDelta, StatTile } from "@/components/ui/stat-tile";
 import { requireClientAccess } from "@/lib/auth/guards";
 import { estimateCheckCost } from "@/lib/dataforseo/client";
 import { PRICE_PER_PAGE_STANDARD } from "@/lib/dataforseo/pricing";
@@ -69,17 +69,9 @@ export default async function RankingsPage({
   const [status, taskErrors, missingVolumes] = staffInfo ?? [null, [], 0];
 
   const since = `since ${formatDayShort(range.from)}`;
-  const averageDelta: DeltaProps | null =
-    summary.comparable > 0 && summary.averagePosition !== null && summary.start.averagePosition !== null
-      ? (() => {
-          const gained = summary.start.averagePosition - summary.averagePosition;
-          if (Math.abs(gained) < 0.05) return { text: "0", direction: "flat" as const, good: null };
-          return {
-            text: formatDecimal(Math.abs(gained), 1),
-            direction: gained > 0 ? ("up" as const) : ("down" as const),
-            good: gained > 0,
-          };
-        })()
+  const averageDelta =
+    summary.comparable > 0
+      ? positionDelta(summary.averagePosition, summary.start.averagePosition)
       : null;
   const bandDelta = (now: number, start: number) =>
     summary.comparable > 0 ? countDelta(now, start) : null;
